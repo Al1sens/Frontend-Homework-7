@@ -1,0 +1,85 @@
+<!-- Помилка 404 -->
+<div *ngIf="errorStatus === 404" class="error-container">
+  <p>Group reservation not found</p>
+</div>
+
+<!-- Інша помилка сервера -->
+<div *ngIf="errorStatus && errorStatus !== 404" class="error-container">
+  <p>An error occurred</p>
+  <button (click)="loadData()">Try again</button>
+</div>
+
+<!-- Основний вміст -->
+<main *ngIf="!errorStatus && !isLoading">
+  <h1>Group Pre-Order</h1>
+
+  <header class="order-header" *ngIf="invite">
+    <span class="status-badge">Collecting pre-orders</span>
+    <p>{{ invite.LocationAddress }}</p>
+    <p>{{ invite.StartTime | date:'mediumDate' }}</p>
+    <p>{{ participants.length }} of {{ invite.MaxGuestCount }} guests</p>
+  </header>
+
+  <!-- Учасники -->
+  <ul>
+    <li *ngFor="let participant of participants">
+      <app-participant-card>
+        <h2>{{ participant.id === ownerSessionId ? 'My Pre-Order' : 'Guest: ' + participant.name }}</h2>
+        <span class="status">{{ participant.isSubmitted ? 'Submitted' : 'Still choosing' }}</span>
+        <div *ngFor="let item of participant.items">
+          <p>{{ item.dish.name }} — {{ item.quantity }} x ${{ item.dish.price | number:'1.2-2' }}</p>
+        </div>
+        <p>Total: ${{ participant.total | number:'1.2-2' }}</p>
+      </app-participant-card>
+    </li>
+  </ul>
+
+  <!-- Порожньо: жоден учасник не додав страв -->
+  <div *ngIf="!hasDishes" class="empty-state">
+    <p>Participants haven’t added any dishes yet</p>
+  </div>
+
+  <!-- Консолідоване замовлення -->
+  <footer class="order-footer">
+    <!-- Жовта плашка про непідтверджені кошики -->
+    <div *ngIf="unsubmittedCount > 0" class="warning-banner">
+      <p>{{ unsubmittedCount }} participant hasn’t submitted their order</p>
+    </div>
+
+    <!-- Список згрупованих страв -->
+    <div class="consolidated-list">
+      <p *ngFor="let dish of consolidatedDishes">
+        {{ dish.name }} × {{ dish.quantity }}
+      </p>
+    </div>
+
+    <p class="total-price">Grand Total: ${{ grandTotal | number:'1.2-2' }}</p>
+
+    <!-- Кнопки та статус після відправки -->
+    <div *ngIf="isSubmittedSuccess" class="success-status">
+      <p>Sent to Restaurant</p>
+    </div>
+
+    <button 
+      *ngIf="!isSubmittedSuccess" 
+      class="submit-btn" 
+      [disabled]="!canSubmit" 
+      (click)="openSubmitModal()">
+      Submit Pre-Order
+    </button>
+  </footer>
+
+  <!-- Модальне вікно підтвердження -->
+  <div *ngIf="isModalOpen" role="dialog" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Confirm Group Order</h2>
+      <p>Are you sure you want to submit the group pre-order?</p>
+      <div class="modal-actions">
+        <button (click)="closeSubmitModal()">Cancel</button>
+        <button [disabled]="isSubmitting" (click)="confirmSubmit()">
+          {{ isSubmitting ? 'Submitting…' : 'Submit' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
